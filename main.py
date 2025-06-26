@@ -9,9 +9,34 @@ from queue_manager import QueueManager
 from spotify_handler import SpotifyHandler
 from utils import create_embed, is_url, extract_video_id
 
-# Load Opus library for Discord voice
-discord.opus.load_opus('/nix/store/235dxwql4lqrfjfhqrld8i3pwcffhwxf-libopus-1.4/lib/libopus.so')
-if not discord.opus.is_loaded():
+# Load Opus library for Discord voice - Updated for deployment
+try:
+    # Try different common paths for Opus
+    opus_paths = [
+        '/nix/store/235dxwql4lqrfjfhqrld8i3pwcffhwxf-libopus-1.4/lib/libopus.so',  # Nix
+        '/usr/lib/x86_64-linux-gnu/libopus.so.0',  # Ubuntu/Debian
+        '/usr/lib64/libopus.so.0',  # CentOS/RHEL
+        'libopus.so.0',  # Generic
+        'opus'  # Let Discord.py find it
+    ]
+    
+    opus_loaded = False
+    for path in opus_paths:
+        try:
+            discord.opus.load_opus(path)
+            if discord.opus.is_loaded():
+                opus_loaded = True
+                print(f"Opus loaded successfully from: {path}")
+                break
+        except:
+            continue
+    
+    if not opus_loaded:
+        # Try without specifying path
+        if not discord.opus.is_loaded():
+            raise RuntimeError('Opus library failed to load from any path')
+except Exception as e:
+    print(f"Opus loading error: {e}")
     raise RuntimeError('Opus library failed to load')
 
 # Configure logging
